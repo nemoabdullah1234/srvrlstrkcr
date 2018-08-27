@@ -1,0 +1,10 @@
+defaults:
+  stage: dev
+  role: arn:aws:iam::012179919676:role/service-role/nicbitRole
+  region: us-east-1
+  memorySize: 512
+  versionFunctions: false
+  timeout: 10
+  deploymentBucketName: serverless-deployment
+  
+#authrizer: ak-common-authorizer

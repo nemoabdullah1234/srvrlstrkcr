@@ -1,0 +1,156 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: ak-coretracking # NOTE: update this with your service name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  role: arn:aws:iam::012179919676:role/service-role/nicbitRole
+
+# you can overwrite defaults here
+  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+package:
+#  include:
+#    - include-me.js
+#    - include-me-dir/**
+  exclude:
+    - node_modules/serverless
+    - node_modules/redis
+    - node_modules/redis-commands
+    - node_modules/redis-parser
+    - node_modules/memcached
+    - node_modules/aws-sdk
+
+functions:
+        
+  Tracking:
+    handler: functions/tracking.handler
+    description: Function to pass request to process points
+    memorySize: 128
+    timeout: 3 
+    events:
+      - stream:
+          arn: arn:aws:kinesis:us-east-1:012179919676:stream/LocationPointStream
+          batchSize: 100
+          startingPosition: LATEST
+          enabled: true
+
+  ProcessPoints:
+    handler: functions/processpoints.handler
+    description: Function to process points
+    memorySize: 512
+    timeout: 90 
+    vpc:
+      securityGroupIds:
+        - sg-2c2f8453
+      subnetIds:
+        - subnet-4df80d61
+    events:
+      - stream:
+          arn: arn:aws:kinesis:us-east-1:012179919676:stream/LocationPointStream
+          batchSize: 100
+          startingPosition: LATEST
+          enabled: true
+        
+    environment: 
+        dbURI: "AQECAHi4ewtMW3z8+EXn6dv+cNLUdxTs9BT4ZVf+GHbXbYx23wAAAIcwgYQGCSqGSIb3DQEHBqB3MHUCAQAwcAYJKoZIhvcNAQcBMB4GCWCGSAFlAwQBLjARBAyq7lIoSg+tuZ4c8csCARCAQ4lrqAr9Ueoo+PrHL0No9xZ6CebQeoyNq8R4kkeyJgFmGYo+CDpPU5X/45SVTdv2BOkeGe0zcxrGNvpnSERmvboNUxI="
+        cacheHost: "localhost"
+        cachePort: 11211
+        processLambdaInputMode: "local"
+        apiHost: "slsapi.akwa.io"
+        apiLocationHost: "slsapi.akwa.io"
+        apiZoneHost: "slsapi.akwa.io"
+        apiLocationURI: "/locations/qc/nearbylocation"
+        apiZoneURI: "/locations/qc/findzone"
+        apiSensorURI: "/things/qc/beacons/filter"
+        apiDeviceURI: "/things/qc/getbycode"
+        apiPort: 443
+        validSpeedLimit: 200
+        
+  TestIOT:
+    handler: functions/testiot.handler
+    description: Function to test iot
+    memorySize: 128
+    timeout: 10
+    environment:
+        dbURI: "AQECAHi4ewtMW3z8+EXn6dv+cNLUdxTs9BT4ZVf+GHbXbYx23wAAAIcwgYQGCSqGSIb3DQEHBqB3MHUCAQAwcAYJKoZIhvcNAQcBMB4GCWCGSAFlAwQBLjARBAyq7lIoSg+tuZ4c8csCARCAQ4lrqAr9Ueoo+PrHL0No9xZ6CebQeoyNq8R4kkeyJgFmGYo+CDpPU5X/45SVTdv2BOkeGe0zcxrGNvpnSERmvboNUxI="
+    
+              
+        
+#    The following are a few example events you can configure
+#    NOTE: Please make sure to change your handler code to work with those events
+#    Check the event documentation for details
+#    events:
+#      - http:
+#          path: users/create
+#          method: get
+#      - s3: ${env:BUCKET}
+#      - schedule: rate(10 minutes)
+#      - sns: greeter-topic
+#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
+#      - alexaSkill
+#      - iot:
+#          sql: "SELECT * FROM 'some_topic'"
+#      - cloudwatchEvent:
+#          event:
+#            source:
+#              - "aws.ec2"
+#            detail-type:
+#              - "EC2 Instance State-change Notification"
+#            detail:
+#              state:
+#                - pending
+
+#    Define function environment variables here
+#    environment:
+#      variable2: value2
+
+# you can add CloudFormation resource templates here
+#resources:
+#  Resources:
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
